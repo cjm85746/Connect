@@ -1,0 +1,264 @@
+#include "Arduino.h"
+#include "SoftwareSerial.h"
+#include "DFRobotDFPlayerMini.h"
+
+SoftwareSerial mySoftwareSerial(2, 3); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+void printDetail(uint8_t type, int value);
+const int BUZZER = 9;
+const int GSR = A2;
+int threshold = 0;
+int sensorValue;
+
+
+void moveServo()
+{
+        int angle;
+        angle = 500;
+        for (int i = 0 ; i < 1000 ; i++) //짐들고
+        {
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                angle = angle + 1;
+                delay(1);
+
+        }
+        //delay(500);
+        for (int i = 0 ; i < 1000 ; i++) //짐들고
+        {
+
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                delay(1);
+                angle = angle - 1;
+
+        }
+}
+
+void moveServo2()
+{
+        int angle;
+        angle = 500;
+        for (int i = 0 ; i < 500 ; i++) //짐들고
+        {
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                angle = angle + 2;
+                delay(1);
+
+        }
+        //delay(500);
+        for (int i = 0 ; i < 500 ; i++) //짐들고
+        {
+
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                delay(1);
+                angle = angle - 2;
+
+        }
+}
+
+void moveServo3()
+{
+        int angle;
+        angle = 500;
+        for (int i = 0 ; i < 333 ; i++) //짐들고
+        {
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                angle = angle + 3;
+                delay(10);
+
+        }
+        //delay(500);
+        for (int i = 0 ; i < 333 ; i++) //짐들고
+        {
+
+                digitalWrite(7, 1);
+                delayMicroseconds(angle);
+                digitalWrite(7, 0);
+                delayMicroseconds(20000 - angle);
+                delay(10);
+                angle = angle - 3;
+
+        }
+}
+
+
+int temp;
+void setup()
+{
+        mySoftwareSerial.begin(9600);
+        
+         long sum = 0;
+        Serial.begin(9600);
+        
+        
+
+        if (!myDFPlayer.begin(mySoftwareSerial)) { //Use softwareSerial to communicate with
+
+                Serial.println("e");
+                while (true);
+        }
+        myDFPlayer.volume(30); //Set volume value. From 0 to 30
+        pinMode(7, OUTPUT);
+        int temp;
+        pinMode(BUZZER, OUTPUT);
+        digitalWrite(BUZZER, LOW);
+        delay(1000);
+        for (int i = 0; i < 500; i++)
+        {
+                sensorValue = analogRead(GSR);
+                sum += sensorValue;
+                delay(5);
+        }
+        threshold = sum / 500;
+        Serial.print("threshold =");
+        Serial.println(threshold);
+
+        
+
+
+        
+
+}
+
+
+void loop()
+{
+
+        bool flag;
+        unsigned long currentTime = millis();
+        static unsigned long timer = millis();
+        if (Serial.available() > 0) {
+                char data = Serial.read();
+                if (data == '0')
+                {
+                        myDFPlayer.pause();  //pause the mp3
+
+                }
+                else
+                {
+                        Serial.println(data);
+                        myDFPlayer.play(data - 48);
+                }
+        }
+
+        if (myDFPlayer.available() > 0) {
+                printDetail(myDFPlayer.readType(), myDFPlayer.read()); //Print the detail message from DFPlayer to handle different errors and states.
+        }
+        
+        sensorValue = analogRead(GSR);
+        
+        temp = threshold - sensorValue;
+        /*
+        if (abs(temp) > 50)
+        {
+                sensorValue = analogRead(GSR);
+                temp = threshold - sensorValue;
+                Serial.print("temp=");
+                Serial.println(temp);
+                if (abs(temp) > 50) {
+                        moveServo();
+                        Serial.println("YES!");
+                        
+                }
+
+             
+        }*/
+
+        if(sensorValue >= 500)
+          flag = false;
+        else
+          flag = true;
+
+        
+        //Serial.print(flag);
+        Serial.print("sensor = ");
+        Serial.print(sensorValue);
+        
+        Serial.print("  Time :  ");
+        Serial.print(currentTime/1000);
+        Serial.println("s");
+        //Serial.print(firstTime);
+
+        
+        if(flag == true && currentTime <= 300000){
+          moveServo3();
+          delay(100);
+        }
+        else if(sensorValue >= 50 && sensorValue <= 150 && currentTime >= 300000)
+        {
+          for(int i=0;i<10;i++){
+            moveServo();
+            delay(100);
+          }
+        }
+}
+
+void printDetail(uint8_t type, int value) {
+        switch (type) {
+                case TimeOut:
+                        //Serial.println(F("Time Out!"));
+                        break;
+                case WrongStack:
+                        //Serial.println(F("Stack Wrong!"));
+                        break;
+                case DFPlayerCardInserted:
+                        //Serial.println(F("Card Inserted!"));
+                        break;
+                case DFPlayerCardRemoved:
+                        //Serial.println(F("Card Removed!"));
+                        break;
+                case DFPlayerCardOnline:
+                        //Serial.println(F("Card Online!"));
+                        break;
+                case DFPlayerPlayFinished:
+                        //Serial.print(F("Number:"));
+                        //Serial.print(value);
+                        //Serial.println(F(" Play Finished!"));
+                        Serial.println("0");
+                        break;
+                case DFPlayerError:
+                        //Serial.print(F("DFPlayerError:"));
+                        switch (value) {
+                                case Busy:
+                                        //Serial.println(F("Card not found"));
+                                        break;
+                                case Sleeping:
+                                        //Serial.println(F("Sleeping"));
+                                        break;
+                                case SerialWrongStack:
+                                        //Serial.println(F("Get Wrong Stack"));
+                                        break;
+                                case CheckSumNotMatch:
+                                        //Serial.println(F("Check Sum Not Match"));
+                                        break;
+                                case FileIndexOut:
+                                        //Serial.println(F("File Index Out of Bound"));
+                                        break;
+                                case FileMismatch:
+                                        //Serial.println(F("Cannot Find File"));
+                                        break;
+                                case Advertise:
+                                        //Serial.println(F("In Advertise"));
+                                        break;
+                                default:
+                                        break;
+                        }
+                        break;
+                default:
+                        break;
+        }
+}
